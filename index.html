@@ -1,1 +1,350 @@
-.
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BANI VFX — Videos</title>
+  <meta name="description" content="Galería minimalista de videos de YouTube en grid, con búsqueda y modo oscuro." />
+  <style>
+    :root {
+      --bg: #0b0b0c; /* negro BANI */
+      --card: #121214;
+      --text: #f6f6f6;
+      --muted: #a1a1a6;
+      --accent: #ff2ca5; /* rosa BANI */
+      --border: #202027;
+    }
+    :root.light {
+      --bg: #ffffff; /* blanco */
+      --card: #f7f7fb;
+      --text: #141417;
+      --muted: #6b6b6e;
+      --accent: #ff2ca5; /* rosa BANI */
+      --border: #e7e7ef;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: var(--bg); color: var(--text);
+    }
+    header { position: sticky; top: 0; z-index: 10; backdrop-filter: saturate(140%) blur(8px);
+      background: color-mix(in oklab, var(--bg) 82%, transparent);
+      border-bottom: 1px solid var(--border);
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 18px 16px; }
+    h1 { font-size: 20px; margin: 0 0 12px; letter-spacing: .2px; }
+    .controls { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; }
+    .search { display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); background: var(--card); border-radius: 999px; padding: 8px 12px; }
+    .search input { flex: 1; border: 0; outline: 0; background: transparent; color: var(--text); font-size: 14px; }
+    .btn { border: 1px solid var(--border); background: var(--card); color: var(--text); padding: 8px 12px; border-radius: 999px; cursor: pointer; font-size: 13px; }
+    .btn:hover { border-color: color-mix(in oklab, var(--accent) 40%, var(--border)); }
+    .grid { display: grid; grid-template-columns: repeat( auto-fill, minmax(240px, 1fr) ); gap: 14px; padding: 18px 16px 80px; max-width: 1100px; margin: 0 auto; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: clip; transition: transform .12s ease, box-shadow .12s ease; }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(0,0,0,.16); }
+    .thumb { aspect-ratio: 16/9; width: 100%; background: #000; display: grid; place-items: center; position: relative; }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .play { position: absolute; inset: auto auto 10px 10px; background: #000a; color: #fff; font-size: 12px; padding: 6px 8px; border-radius: 8px; border: 1px solid #fff3; }
+    .meta { padding: 10px 12px 12px; }
+    .title { font-size: 14px; line-height: 1.3; margin: 0 0 8px; font-weight: 600; }
+    .muted { font-size: 12px; color: var(--muted); }
+    .empty { text-align: center; padding: 64px 16px; color: var(--muted); }
+    footer { max-width: 1100px; margin: 0 auto 40px; color: var(--muted); font-size: 12px; padding: 0 16px; }
+
+    /* Modal */
+    dialog { border: none; padding: 0; border-radius: 16px; overflow: clip; background: var(--card); color: var(--text); box-shadow: 0 12px 40px rgba(0,0,0,.5); width: min(960px, 96vw); }
+    dialog::backdrop { background: rgba(0,0,0,.6); }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    .modal-body { padding: 0; }
+    .close { background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+    .player { aspect-ratio: 16/9; width: 100%; background: #000; }
+
+    /* Helper form */
+    details { background: color-mix(in oklab, var(--card), transparent 40%); border: 1px dashed var(--border); border-radius: 12px; padding: 12px; }
+    details > summary { cursor: pointer; font-weight: 600; margin-bottom: 8px; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    label { font-size: 12px; color: var(--muted); }
+    input[type="text"], textarea { width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 10px; color: var(--text); padding: 8px 10px; font-size: 13px; }
+    textarea { min-height: 80px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap" style="display:flex; gap:16px; align-items:center; justify-content:space-between;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:28px; height:28px; border-radius:8px; background: linear-gradient(135deg, var(--accent), #8a2be2); border:1px solid var(--border);"></div>
+        <h1 style="font-weight:800; letter-spacing:.2px; margin:0;">BANI VFX — Videos</h1>
+      </div>
+      <div class="controls" style="flex:1; max-width:720px;">
+        <div class="search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/></svg>
+          <input id="q" placeholder="Buscar por título…" autocomplete="off" />
+        </div>
+        <button class="btn" id="themeBtn" title="Modo claro/oscuro">🌓 Tema</button>
+        <button class="btn" id="sortBtn" title="Ordenar por fecha/título">⇅ Orden</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap" style="padding-top:14px;">
+      <details open>
+        <summary>Integración con el canal de BANI</summary>
+        <div style="display:grid; gap:14px; margin-top:6px;">
+          <div>
+            <strong>Opción RÁPIDA (sin API):</strong>
+            <p class="muted">Usá la grilla precargada con una selección de videos del canal. Podés editar el listado en el código (const <code>PRESET_ITEMS</code>).</p>
+          </div>
+          <div>
+            <strong>Opción RECOMENDADA (con API, sin servidores):</strong>
+            <div class="form-grid" style="margin-top:8px;">
+              <div>
+                <label>API Key de YouTube Data v3:</label>
+                <input id="apiKey" type="text" placeholder="AIza..." />
+              </div>
+              <div>
+                <label>Channel ID:</label>
+                <input id="idInput" type="text" value="UCLO5xC1DJcQFOL1kvUQzXLg" />
+              </div>
+              <div>
+                <label>&nbsp;</label>
+                <button class="btn" id="fetchBtn">Importar automáticamente</button>
+                <p class="muted" style="margin-top:8px;">Trae todos los videos de <b>@BANIVFX</b> con títulos y fechas.</p>
+              </div>
+            </div>
+          </div>
+          <div>
+            <strong>Opción Manual (pegar URLs o IDs):</strong>
+            <div class="form-grid" style="margin-top:8px;">
+              <div>
+                <label>URLs o IDs (separados por coma o salto de línea):</label>
+                <textarea id="manualList" placeholder="https://www.youtube.com/@BANIVFX
+https://youtu.be/-r8WB0Qfcmg
+https://www.youtube.com/watch?v=H8Ab41nj6_s"></textarea>
+              </div>
+              <div>
+                <label>&nbsp;</label>
+                <button class="btn" id="loadManual">Cargar a la galería</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <section id="grid" class="grid" aria-live="polite"></section>
+    <div id="empty" class="empty" hidden>Sin resultados. Probá limpiar la búsqueda o cargar videos.</div>
+  </main>
+
+  <footer>
+    <p>Hecho con cariño. Subí este <code>index.html</code> a GitHub Pages y listo. ✨</p>
+  </footer>
+
+  <script>
+    // ======== BRAND BANI ========
+    const PRESET_ITEMS = [
+      { id: "-r8WB0Qfcmg", title: "VFX BREAKDOWN - Museo Conmebol | BANI VFX", publishedAt: null },
+      { id: "m4NQlZl_jTM", title: "SERIES - La mente del poder | BANI VFX", publishedAt: null },
+      { id: "H8Ab41nj6_s", title: "CONMEBOL - Muñecos Libertadores | BANI VFX", publishedAt: null },
+      { id: "jnRvSpPNKZ0", title: "SHORT FILM - Cucaracha | BANI VFX", publishedAt: null },
+      { id: "y2VhNRZ7HHk", title: "REEL BANI VFX 2024", publishedAt: null },
+      { id: "tmXkohN21eY", title: "VFX BREAKDOWN - La Piedad | BANI VFX", publishedAt: null }
+    ];
+  </script>
+
+  <dialog id="modal">
+    <div class="modal-head">
+      <div id="modalTitle" style="font-weight:600;">Reproduciendo…</div>
+      <button class="close" id="closeModal">Cerrar</button>
+    </div>
+    <div class="modal-body">
+      <iframe id="player" class="player" src="" title="YouTube player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+    </div>
+  </dialog>
+
+  <script>
+    /* ===============================
+       Config rápida (sin API)
+       - Pegá tus URLs o IDs en la Opción A y tocá "Cargar a la galería".
+       - O pasá ?videos=ID1,ID2,ID3 en la URL para pre-cargar.
+       =============================== */
+
+    const $ = (sel, ctx=document) => ctx.querySelector(sel);
+    const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
+
+    const state = {
+      items: [], // {id, title, publishedAt}
+      order: 'date-desc',
+      theme: localStorage.getItem('ytgrid-theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
+    };
+
+    function applyTheme() {
+      document.documentElement.classList.toggle('light', state.theme === 'light');
+      localStorage.setItem('ytgrid-theme', state.theme);
+    }
+
+    function parseVideoId(input) {
+      // Acepta URL completa o ID
+      try {
+        if (/^https?:\/\//i.test(input)) {
+          const u = new URL(input.trim());
+          if (u.hostname.includes('youtu.be')) return u.pathname.slice(1);
+          if (u.searchParams.get('v')) return u.searchParams.get('v');
+          // URLs tipo /shorts/ID o /live/ID
+          const m = u.pathname.match(/\/shorts\/([\w-]+)/) || u.pathname.match(/\/live\/([\w-]+)/);
+          if (m) return m[1];
+        }
+      } catch {}
+      return input.trim();
+    }
+
+    function videoThumb(id) {
+      // HQ por defecto; si falla se ve negra
+      return `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+    }
+
+    function render() {
+      const q = $('#q').value.trim().toLowerCase();
+      let rows = state.items;
+      if (q) rows = rows.filter(v => (v.title || '').toLowerCase().includes(q));
+
+      if (state.order === 'date-desc') rows = rows.slice().sort((a,b)=> new Date(b.publishedAt||0) - new Date(a.publishedAt||0));
+      if (state.order === 'date-asc') rows = rows.slice().sort((a,b)=> new Date(a.publishedAt||0) - new Date(b.publishedAt||0));
+      if (state.order === 'title-asc') rows = rows.slice().sort((a,b)=> (a.title||'').localeCompare(b.title||''));
+
+      const grid = $('#grid');
+      grid.innerHTML = '';
+      rows.forEach(v => grid.appendChild(card(v)));
+
+      $('#empty').hidden = rows.length !== 0;
+    }
+
+    function card(v) {
+      const el = document.createElement('article');
+      el.className = 'card';
+      const date = v.publishedAt ? new Date(v.publishedAt).toLocaleDateString(undefined, { year:'numeric', month:'short', day:'2-digit' }) : '';
+      el.innerHTML = `
+        <div class="thumb" role="button" aria-label="Reproducir ${escapeHtml(v.title||'Video')}" data-id="${v.id}" data-title="${escapeHtml(v.title||'Video')}">
+          <img loading="lazy" src="${videoThumb(v.id)}" alt="Miniatura de ${escapeHtml(v.title||'')}">
+          <span class="play">▶ Reproducir</span>
+        </div>
+        <div class="meta">
+          <h3 class="title">${escapeHtml(v.title||'—')}</h3>
+          <div class="muted">${date}</div>
+        </div>`;
+      el.querySelector('.thumb').addEventListener('click', () => openModal(v.id, v.title));
+      return el;
+    }
+
+    function escapeHtml(s='') {
+      return s.replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+    }
+
+    function openModal(id, title='') {
+      $('#modalTitle').textContent = title || 'Reproduciendo…';
+      $('#player').src = `https://www.youtube.com/embed/${id}?autoplay=1`;
+      $('#modal').showModal();
+    }
+    $('#closeModal').addEventListener('click', () => {
+      $('#player').src = '';
+      $('#modal').close();
+    });
+
+    // Controles
+    $('#themeBtn').addEventListener('click', () => { state.theme = (state.theme === 'light' ? 'dark' : 'light'); applyTheme(); });
+    $('#sortBtn').addEventListener('click', () => {
+      state.order = state.order === 'date-desc' ? 'title-asc' : (state.order === 'title-asc' ? 'date-asc' : 'date-desc');
+      render();
+    });
+    $('#q').addEventListener('input', render);
+
+    // Carga manual
+    $('#loadManual').addEventListener('click', () => {
+      const raw = $('#manualList').value.trim();
+      if (!raw) return;
+      const ids = raw.split(/\n|,|\s/).map(s=>s.trim()).filter(Boolean).map(parseVideoId);
+      const unique = [...new Set(ids)];
+      state.items = unique.map(id => ({ id, title: '', publishedAt: null }));
+      render();
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    });
+
+    // API fetch (opcional)
+    $('#fetchBtn').addEventListener('click', async () => {
+      const key = $('#apiKey').value.trim();
+      const id = $('#idInput').value.trim();
+      if (!key || !id) return alert('Completá API Key y Channel/Playlist ID.');
+      try {
+        const items = id.startsWith('UC') ? await fetchChannelUploads(key, id) : await fetchPlaylistItems(key, id);
+        state.items = items;
+        render();
+        alert(`Cargados ${items.length} videos.`);
+      } catch (e) {
+        console.error(e);
+        alert('Error al importar. Revisá que la clave y el ID sean correctos y que la cuota esté disponible.');
+      }
+    });
+
+    async function fetchChannelUploads(key, channelId) {
+      // 1) obtener playlist de uploads
+      const ch = await ytJson(`https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${channelId}&key=${key}`);
+      const uploads = ch.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+      if (!uploads) throw new Error('No se encontró uploads playlist.');
+      return fetchPlaylistItems(key, uploads);
+    }
+
+    async function fetchPlaylistItems(key, playlistId) {
+      let pageToken = '';
+      const out = [];
+      do {
+        const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${playlistId}&key=${key}${pageToken?`&pageToken=${pageToken}`:''}`;
+        const json = await ytJson(url);
+        json.items?.forEach(it => {
+          const s = it.snippet || {};
+          out.push({ id: s.resourceId?.videoId, title: s.title, publishedAt: s.publishedAt });
+        });
+        pageToken = json.nextPageToken || '';
+      } while (pageToken);
+      return out.filter(v => !!v.id);
+    }
+
+    async function ytJson(url) {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }
+
+    // Cargar por querystring ?videos=ID1,ID2
+    (function initFromQuery() {
+      applyTheme();
+      const params = new URLSearchParams(location.search);
+      const vids = params.get('videos');
+      if (vids) {
+        const ids = vids.split(',').map(parseVideoId).filter(Boolean);
+        state.items = [...new Set(ids)].map(id => ({ id, title: '', publishedAt: null }));
+      } else {
+        // Precarga BANI si no hay query ni datos cargados
+        state.items = PRESET_ITEMS.slice();
+      }
+      render();
+    })();
+  </script>
+
+  <!--
+  =============================
+  ☑️ Cómo publicarla en GitHub Pages (rápido)
+  1) Creá un repo nuevo en GitHub (por ej. youtube-grid).
+  2) Subí este archivo como index.html a la rama main.
+  3) En Settings → Pages → Source: Deploy from a branch → main /root.
+  4) Te dará una URL pública. Listo.
+
+  🤫 Notas útiles
+  - Sin API: pegá tu lista en "Opción A" o usá ?videos=ID1,ID2,ID3 en la URL.
+  - Con API: crea un API key de YouTube Data v3 (Google Cloud) y poné tu Channel ID (arranca con UC...) o Playlist ID (PL...).
+  - Estilos minimalistas, modo oscuro/claro, búsqueda y orden.
+  - Para un look aún más "GB/Bani": cambiá --accent arriba.
+  =============================
+  -->
+</body>
+</html>
+
