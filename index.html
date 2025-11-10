@@ -83,7 +83,15 @@
     function setBestThumb(img,id,fallback){
       const seq=['maxresdefault','sddefault','hqdefault','mqdefault','default'];
       let i=0;
-      img.onerror=()=>{ if(i<seq.length){ img.src=`https://i.ytimg.com/vi/${id}/${seq[i++]}.jpg`; } else { img.onerror=null; fallback.style.display='flex'; } };
+      const showFallback=()=>{ img.style.display='none'; fallback.style.display='flex'; };
+      const next=()=>{ if(i<seq.length){ img.src=`https://i.ytimg.com/vi/${id}/${seq[i++]}.jpg`; } else { showFallback(); } };
+      img.onerror=next;
+      img.onload=()=>{
+        const w=img.naturalWidth||0, h=img.naturalHeight||0;
+        if (w<=120 || h<=90 || /\/default\.jpg$/.test(img.src)) { showFallback(); }
+      };
+      next();
+    }/${seq[i++]}.jpg`; } else { img.onerror=null; fallback.style.display='flex'; } };
       img.onerror();
     }
 
