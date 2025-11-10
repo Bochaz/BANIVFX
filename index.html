@@ -70,6 +70,15 @@
   <script>
     const API_KEY = "AIzaSyAvH1ulPBHpFC2_2IHLR_x438yRBdMvdNk";
     const CHANNEL_ID = "UCLO5xC1DJcQFOL1kvUQzXLg";
+    // Fallback local por si falla la API o la cuota
+    const PRESET_ITEMS = [
+      { id: "-r8WB0Qfcmg", title: "VFX BREAKDOWN - Museo Conmebol | BANI VFX", publishedAt: null },
+      { id: "m4NQlZl_jTM", title: "SERIES - La mente del poder | BANI VFX", publishedAt: null },
+      { id: "H8Ab41nj6_s", title: "CONMEBOL - Muñecos Libertadores | BANI VFX", publishedAt: null },
+      { id: "jnRvSpPNKZ0", title: "SHORT FILM - Cucaracha | BANI VFX", publishedAt: null },
+      { id: "y2VhNRZ7HHk", title: "REEL BANI VFX 2024", publishedAt: null },
+      { id: "tmXkohN21eY", title: "VFX BREAKDOWN - La Piedad | BANI VFX", publishedAt: null }
+    ];
     const $ = s=>document.querySelector(s);
     const state = { items: [], order:'date-desc', theme:localStorage.getItem('yt-theme')||'dark'};
 
@@ -108,10 +117,45 @@
 
     function render(){const q=$('#q').value.toLowerCase();let vids=state.items;if(q)vids=vids.filter(v=>(v.title||'').toLowerCase().includes(q));if(state.order==='title-asc')vids.sort((a,b)=>(a.title||'').localeCompare(b.title||''));else vids.sort((a,b)=>new Date(b.publishedAt)-new Date(a.publishedAt));$('#grid').innerHTML='';vids.forEach(v=>$('#grid').appendChild(card(v)));$('#empty').hidden=vids.length>0;}
 
-    async function ytJson(u){const r=await fetch(u);if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}
-    async function fetchChannelUploads(k,id){const ch=await ytJson(`https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${id}&key=${k}`);const up=ch.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;const list=await ytJson(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${up}&key=${k}`);return list.items.map(it=>({id:it.snippet.resourceId.videoId,title:it.snippet.title,publishedAt:it.snippet.publishedAt}))}
+    async function ytJson(u){
+      const timeout = new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')), 10000));
+      const r = await Promise.race([fetch(u), timeout]);
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return r.json();
+    }
+    async function fetchChannelUploads(k,id){
+      const ch=await ytJson(`https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${id}&key=${k}`);
+      const up=ch.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+      if(!up) throw new Error('uploads playlist no encontrada');
+      // pagina todas las entradas
+      let pageToken='';
+      const out=[];
+      do{
+        const url=`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${up}&key=${k}${pageToken?`&pageToken=${pageToken}`:''}`;
+        const json=await ytJson(url);
+        json.items?.forEach(it=>{
+          const s=it.snippet||{};
+          if(s.resourceId?.videoId) out.push({id:s.resourceId.videoId,title:s.title,publishedAt:s.publishedAt});
+        });
+        pageToken=json.nextPageToken||'';
+      } while(pageToken);
+      return out;
+    }{const ch=await ytJson(`https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${id}&key=${k}`);const up=ch.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;const list=await ytJson(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${up}&key=${k}`);return list.items.map(it=>({id:it.snippet.resourceId.videoId,title:it.snippet.title,publishedAt:it.snippet.publishedAt}))}
 
-    async function load(){try{const items=await fetchChannelUploads(API_KEY,CHANNEL_ID);state.items=items;render()}catch(e){$('#empty').textContent='Error al cargar videos.';console.error(e)}}
+    async function load(){
+      try{
+        $('#empty').textContent='Cargando…';
+        const items=await fetchChannelUploads(API_KEY,CHANNEL_ID);
+        if(!items.length) throw new Error('sin_items');
+        state.items=items; render(); $('#empty').hidden=state.items.length>0;
+      }catch(e){
+        console.warn('Fallo API, uso fallback local:', e);
+        state.items = PRESET_ITEMS.slice();
+        render();
+        $('#empty').hidden = state.items.length>0;
+        if(!state.items.length){ $('#empty').textContent='No pudimos cargar videos (API/cuota).'; }
+      }
+    }catch(e){$('#empty').textContent='Error al cargar videos.';console.error(e)}}
 
     function openModal(id,t){$('#modalTitle').textContent=t;$('#player').src=`https://www.youtube.com/embed/${id}?autoplay=1`;$('#modal').showModal()}
     $('#closeModal').onclick=()=>{$('#player').src='';$('#modal').close()}
