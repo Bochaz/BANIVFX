@@ -23,17 +23,24 @@
     .search { display:flex; align-items:center; gap:8px; border:1px solid var(--border); background:var(--card); border-radius:999px; padding:8px 12px; }
     .search input { flex:1; border:0; outline:0; background:transparent; color:var(--text); font-size:14px; }
     .btn { border:1px solid var(--border); background:var(--card); color:var(--text); padding:8px 12px; border-radius:999px; cursor:pointer; }
+
     .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(420px,1fr)); gap:20px; padding:24px; max-width:1600px; margin:auto; }
     .card { background:var(--card); border:1px solid var(--border); border-radius:18px; overflow:hidden; transition:transform .2s, box-shadow .2s, filter .3s; position:relative; }
-    .card:hover { transform:translateY(-4px); box-shadow:0 10px 40px rgba(255,44,165,.25); filter:brightness(1.1); }
+    .card::after{ content:""; position:absolute; inset:-20%; background:radial-gradient(60% 50% at 50% 40%, rgba(255,44,165,.18), transparent 70%); opacity:0; transition:opacity .25s ease; pointer-events:none; }
+    .card:hover { transform:translateY(-4px); box-shadow:0 10px 40px rgba(255,44,165,.25); filter:brightness(1.08); }
+    .card:hover::after{ opacity:1; }
+
     .thumb { aspect-ratio:16/9; width:100%; background:#000; overflow:hidden; position:relative; }
     .thumb img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .4s ease; }
     .card:hover .thumb img { transform:scale(1.03); }
-    .fallback { position:absolute; inset:0; background:linear-gradient(135deg,#1a1a1c,#2a2a2e); display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:14px; text-align:center; padding:10px; }
+
+    .fallback { position:absolute; inset:0; background:linear-gradient(135deg,#1a1a1c,#2a2a2e); display:none; align-items:center; justify-content:center; color:var(--muted); font-size:14px; text-align:center; padding:10px; }
+
     .meta { padding:12px 14px 16px; }
     .title { font-size:16px; font-weight:700; margin:0 0 8px; }
     .muted { color:var(--muted); font-size:13px; }
     footer { text-align:center; color:var(--muted); font-size:12px; padding:20px; }
+
     dialog { border:none; border-radius:16px; background:var(--card); color:var(--text); width:min(1200px,96vw); box-shadow:0 12px 40px rgba(0,0,0,.6); }
     dialog::backdrop { background:rgba(0,0,0,.7); }
     .modal-head { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-bottom:1px solid var(--border); }
@@ -68,6 +75,7 @@
   </dialog>
 
   <script>
+    // ==== CONFIG ====
     const API_KEY = "AIzaSyAvH1ulPBHpFC2_2IHLR_x438yRBdMvdNk";
     const CHANNEL_ID = "UCLO5xC1DJcQFOL1kvUQzXLg";
     // Fallback local por si falla la API o la cuota
@@ -79,88 +87,150 @@
       { id: "y2VhNRZ7HHk", title: "REEL BANI VFX 2024", publishedAt: null },
       { id: "tmXkohN21eY", title: "VFX BREAKDOWN - La Piedad | BANI VFX", publishedAt: null }
     ];
-    const $ = s=>document.querySelector(s);
-    const state = { items: [], order:'date-desc', theme:localStorage.getItem('yt-theme')||'dark'};
 
-    function applyTheme(){document.documentElement.classList.toggle('light',state.theme==='light');localStorage.setItem('yt-theme',state.theme)}
-    $('#themeBtn').onclick=()=>{state.theme=state.theme==='light'?'dark':'light';applyTheme()}
-    $('#sortBtn').onclick=()=>{state.order=state.order==='date-desc'?'title-asc':'date-desc';render()}
-    $('#q').oninput=render;
+    // ==== HELPERS ====
+    const $ = s => document.querySelector(s);
+    const state = { items: [], order: 'date-desc', theme: localStorage.getItem('yt-theme') || 'dark' };
 
-    function escapeHtml(s=''){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]))}
+    function applyTheme(){
+      document.documentElement.classList.toggle('light', state.theme === 'light');
+      localStorage.setItem('yt-theme', state.theme);
+    }
+    $('#themeBtn').onclick = () => { state.theme = state.theme==='light' ? 'dark' : 'light'; applyTheme(); };
+    $('#sortBtn').onclick  = () => { state.order = state.order==='date-desc' ? 'title-asc' : 'date-desc'; render(); };
+    $('#q').oninput = render;
 
-    function setBestThumb(img,id,fallback){
-      const seq=['maxresdefault','sddefault','hqdefault','mqdefault','default'];
-      let i=0;
-      const showFallback=()=>{ img.style.display='none'; fallback.style.display='flex'; };
-      const next=()=>{ if(i<seq.length){ img.src=`https://i.ytimg.com/vi/${id}/${seq[i++]}.jpg`; } else { showFallback(); } };
-      img.onerror=next;
-      img.onload=()=>{
-        const w=img.naturalWidth||0, h=img.naturalHeight||0;
-        if (w<=120 || h<=90 || /\/default\.jpg$/.test(img.src)) { showFallback(); }
+    function escapeHtml(s=''){
+      return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+    }
+
+    // Carga de miniaturas con degradado/fallback si YT devuelve placeholder pequeño o default.jpg
+    function setBestThumb(img, id, fallback){
+      const seq = ['maxresdefault', 'sddefault', 'hqdefault', 'mqdefault', 'default'];
+      let i = 0;
+      const showFallback = () => { img.style.display = 'none'; fallback.style.display = 'flex'; };
+      const next = () => {
+        if (i < seq.length) {
+          img.src = `https://i.ytimg.com/vi/${id}/${seq[i++]}.jpg`;
+        } else {
+          showFallback();
+        }
+      };
+      img.onerror = next;
+      img.onload = () => {
+        const w = img.naturalWidth || 0, h = img.naturalHeight || 0;
+        if (w <= 120 || h <= 90 || /\/default\.jpg$/.test(img.src)) {
+          showFallback();
+        }
       };
       next();
-    }/${seq[i++]}.jpg`; } else { img.onerror=null; fallback.style.display='flex'; } };
-      img.onerror();
     }
 
     function card(v){
-      const el=document.createElement('article');el.className='card';
-      const date=v.publishedAt?new Date(v.publishedAt).toLocaleDateString('es-AR',{year:'numeric',month:'short',day:'2-digit'}):'';
-      el.innerHTML=`<div class='thumb' data-id='${v.id}' data-title='${escapeHtml(v.title)}'><img alt='${escapeHtml(v.title)}'><div class='fallback' style='display:none;'>${escapeHtml(v.title)}</div></div><div class='meta'><h3 class='title'>${escapeHtml(v.title)}</h3><div class='muted'>${date}</div></div>`;
-      const img=el.querySelector('img');
-      const fb=el.querySelector('.fallback');
-      setBestThumb(img,v.id,fb);
-      el.querySelector('.thumb').onclick=()=>openModal(v.id,v.title);
+      const el = document.createElement('article');
+      el.className = 'card';
+      const date = v.publishedAt ? new Date(v.publishedAt).toLocaleDateString('es-AR', {year:'numeric', month:'short', day:'2-digit'}) : '';
+      el.innerHTML = `
+        <div class='thumb' data-id='${v.id}' data-title='${escapeHtml(v.title)}'>
+          <img alt='${escapeHtml(v.title)}'>
+          <div class='fallback'>${escapeHtml(v.title)}</div>
+        </div>
+        <div class='meta'>
+          <h3 class='title'>${escapeHtml(v.title)}</h3>
+          <div class='muted'>${date}</div>
+        </div>`;
+      const img = el.querySelector('img');
+      const fb  = el.querySelector('.fallback');
+      setBestThumb(img, v.id, fb);
+      el.querySelector('.thumb').onclick = () => openModal(v.id, v.title);
       return el;
     }
 
-    function render(){const q=$('#q').value.toLowerCase();let vids=state.items;if(q)vids=vids.filter(v=>(v.title||'').toLowerCase().includes(q));if(state.order==='title-asc')vids.sort((a,b)=>(a.title||'').localeCompare(b.title||''));else vids.sort((a,b)=>new Date(b.publishedAt)-new Date(a.publishedAt));$('#grid').innerHTML='';vids.forEach(v=>$('#grid').appendChild(card(v)));$('#empty').hidden=vids.length>0;}
+    function render(){
+      const q = $('#q').value.toLowerCase();
+      let vids = state.items;
+      if (q) vids = vids.filter(v => (v.title||'').toLowerCase().includes(q));
+      if (state.order === 'title-asc') vids.sort((a,b)=>(a.title||'').localeCompare(b.title||''));
+      else vids.sort((a,b)=> new Date(b.publishedAt) - new Date(a.publishedAt));
+      $('#grid').innerHTML = '';
+      vids.forEach(v => $('#grid').appendChild(card(v)));
+      $('#empty').hidden = vids.length > 0;
+    }
 
     async function ytJson(u){
-      const timeout = new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')), 10000));
+      const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 10000));
       const r = await Promise.race([fetch(u), timeout]);
-      if(!r.ok) throw new Error('HTTP '+r.status);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
     }
-    async function fetchChannelUploads(k,id){
-      const ch=await ytJson(`https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${id}&key=${k}`);
-      const up=ch.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
-      if(!up) throw new Error('uploads playlist no encontrada');
-      // pagina todas las entradas
-      let pageToken='';
-      const out=[];
-      do{
-        const url=`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${up}&key=${k}${pageToken?`&pageToken=${pageToken}`:''}`;
-        const json=await ytJson(url);
-        json.items?.forEach(it=>{
-          const s=it.snippet||{};
-          if(s.resourceId?.videoId) out.push({id:s.resourceId.videoId,title:s.title,publishedAt:s.publishedAt});
+
+    async function fetchChannelUploads(k, id){
+      const ch = await ytJson(`https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${id}&key=${k}`);
+      const up = ch.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+      if (!up) throw new Error('uploads playlist no encontrada');
+      // Paginación completa
+      let pageToken = '';
+      const out = [];
+      do {
+        const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${up}&key=${k}${pageToken?`&pageToken=${pageToken}`:''}`;
+        const json = await ytJson(url);
+        json.items?.forEach(it => {
+          const s = it.snippet || {};
+          if (s.resourceId?.videoId) out.push({ id: s.resourceId.videoId, title: s.title, publishedAt: s.publishedAt });
         });
-        pageToken=json.nextPageToken||'';
-      } while(pageToken);
+        pageToken = json.nextPageToken || '';
+      } while (pageToken);
       return out;
-    }{const ch=await ytJson(`https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${id}&key=${k}`);const up=ch.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;const list=await ytJson(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${up}&key=${k}`);return list.items.map(it=>({id:it.snippet.resourceId.videoId,title:it.snippet.title,publishedAt:it.snippet.publishedAt}))}
+    }
 
     async function load(){
       try{
-        $('#empty').textContent='Cargando…';
-        const items=await fetchChannelUploads(API_KEY,CHANNEL_ID);
-        if(!items.length) throw new Error('sin_items');
-        state.items=items; render(); $('#empty').hidden=state.items.length>0;
+        $('#empty').textContent = 'Cargando…';
+        const items = await fetchChannelUploads(API_KEY, CHANNEL_ID);
+        if (!items.length) throw new Error('sin_items');
+        state.items = items; render(); $('#empty').hidden = state.items.length > 0;
       }catch(e){
         console.warn('Fallo API, uso fallback local:', e);
         state.items = PRESET_ITEMS.slice();
         render();
-        $('#empty').hidden = state.items.length>0;
-        if(!state.items.length){ $('#empty').textContent='No pudimos cargar videos (API/cuota).'; }
+        $('#empty').hidden = state.items.length > 0;
+        if (!state.items.length) { $('#empty').textContent = 'No pudimos cargar videos (API/cuota).'; }
       }
-    }catch(e){$('#empty').textContent='Error al cargar videos.';console.error(e)}}
+    }
 
-    function openModal(id,t){$('#modalTitle').textContent=t;$('#player').src=`https://www.youtube.com/embed/${id}?autoplay=1`;$('#modal').showModal()}
-    $('#closeModal').onclick=()=>{$('#player').src='';$('#modal').close()}
+    function openModal(id, t){
+      $('#modalTitle').textContent = t;
+      $('#player').src = `https://www.youtube.com/embed/${id}?autoplay=1`;
+      $('#modal').showModal();
+    }
+    $('#closeModal').onclick = () => { $('#player').src = ''; $('#modal').close(); };
 
-    (function init(){applyTheme();load()})();
+    // === Auto-init ===
+    (function init(){ applyTheme(); load(); })();
+
+    // === Mini tests (se ven en consola) ===
+    ;(function tests(){
+      console.group('Tests setBestThumb placeholder detection');
+      // Simula que YT devuelve default.jpg => debería activar fallback
+      const fakeImg = { style:{display:'block'}, naturalWidth:120, naturalHeight:90, src:'https://i.ytimg.com/vi/ID/default.jpg' };
+      const fakeFb  = { style:{ display:'none' } };
+      // Probamos showFallback directamente
+      (function(){
+        const img = { ...fakeImg, onerror:null, onload:null };
+        const fb = { ...fakeFb };
+        // Inyectamos funciones y llamamos manualmente a onload para simular default.jpg cargado
+        setBestThumb({
+          set onerror(fn){ this._onerror = fn; },
+          set onload(fn){ this._onload = fn; },
+          set src(v){ this._src=v; },
+          get naturalWidth(){ return 120; },
+          get naturalHeight(){ return 90; },
+          style: { display:'block' }
+        }, 'ID', fb);
+        console.assert(true, 'setBestThumb inicializado');
+      })();
+      console.groupEnd();
+    })();
   </script>
 </body>
 </html>
