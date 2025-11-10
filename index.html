@@ -18,7 +18,6 @@
     header { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(8px); background: rgba(11,11,12,0.8); border-bottom: 1px solid var(--border); }
     .wrap { max-width: 1400px; margin: 0 auto; padding: 18px 16px; display:flex; align-items:center; justify-content:space-between; }
     h1 { font-weight:800; font-size:20px; margin:0; display:flex; align-items:center; gap:10px; }
-    h1::before { content:''; width:16px; height:16px; border-radius:4px; background:linear-gradient(135deg,var(--accent),#8a2be2); }
     .controls { display:flex; gap:10px; align-items:center; }
     .search { display:flex; align-items:center; gap:8px; border:1px solid var(--border); background:var(--card); border-radius:999px; padding:8px 12px; }
     .search input { flex:1; border:0; outline:0; background:transparent; color:var(--text); font-size:14px; }
@@ -52,7 +51,10 @@
 <body>
   <header>
     <div class="wrap">
-      <h1>BANI VFX — Videos</h1>
+      <h1 style="display:flex;align-items:center;gap:10px;margin:0;">
+        <img src="bani-logo.png" alt="BANI VFX" style="height:28px; width:auto; object-fit:contain;" onerror="this.replaceWith(document.createTextNode('BANI VFX'))">
+        <span style="font-weight:700;">Videos</span>
+      </h1>
       <div class="controls">
         <div class="search">
           <input id="q" placeholder="Buscar por título…" />
@@ -106,56 +108,39 @@
       return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
     }
 
-    // Carga de miniaturas con degradado/fallback si YT devuelve placeholder pequeño o default.jpg
+    // === Thumbnails ===
+    function buildThumbCandidates(id){
+      const jpgs = ['hqdefault.jpg','sddefault.jpg','maxresdefault.jpg','mqdefault.jpg','default.jpg','0.jpg'];
+      const webps = ['hqdefault.webp','sddefault.webp','maxresdefault.webp','mqdefault.webp'];
+      const hosts = [
+        f => `https://i.ytimg.com/vi/${id}/${f}`,
+        f => `https://img.youtube.com/vi/${id}/${f}`,
+        f => `https://i.ytimg.com/vi_webp/${id}/${f}`,
+      ];
+      const seq = [];
+      hosts.slice(0,2).forEach(h => jpgs.forEach(f => seq.push(h(f))));
+      hosts.slice(2,3).forEach(h => webps.forEach(f => seq.push(h(f))));
+      return seq;
+    }
+
     function setBestThumb(img, id, fallback){
-      const seq = ['maxresdefault', 'sddefault', 'hqdefault', 'mqdefault', 'default'];
+      const seq = buildThumbCandidates(id);
       let i = 0;
-      const showFallback = () => { img.style.display = 'none'; fallback.style.display = 'flex'; };
-      const next = () => {
-        if (i < seq.length) {
-          img.src = `https://i.ytimg.com/vi/${id}/${seq[i++]}.jpg`;
-        } else {
-          // Si ninguna existe realmente, mostramos el fallback textual
-          showFallback();
-        }
-      };
+      const showFallback = () => { img.style.display = 'none'; if (fallback) fallback.style.display = 'flex'; };
+      const next = () => { if (i < seq.length) img.src = seq[i++]; else showFallback(); };
       img.onerror = next;
       img.onload = () => {
         const w = img.naturalWidth || 0, h = img.naturalHeight || 0;
-        const isDefault = /\/default\.jpg$/.test(img.src);
-        if (w <= 120 || h <= 90 || isDefault) {
-          // Preferencia del usuario: ver la imagen aunque tenga barras
-          // Cambiamos a object-fit: contain manteniendo el fondo negro
-          const thumb = img.closest('.thumb');
-          if (thumb) thumb.classList.add('lowres');
-          img.style.display = 'block';
-          fallback.style.display = 'none';
-        } else {
-          const thumb = img.closest('.thumb');
-          if (thumb) thumb.classList.remove('lowres');
-          img.style.display = 'block';
-          fallback.style.display = 'none';
-        }
-      };
-      next();
-    };
-      const next = () => {
-        if (i < seq.length) {
-          img.src = `https://i.ytimg.com/vi/${id}/${seq[i++]}.jpg`;
-        } else {
-          showFallback();
-        }
-      };
-      img.onerror = next;
-      img.onload = () => {
-        const w = img.naturalWidth || 0, h = img.naturalHeight || 0;
-        if (w <= 120 || h <= 90 || /\/default\.jpg$/.test(img.src)) {
-          showFallback();
-        }
+        const tiny = (w <= 120 || h <= 90);
+        const thumb = img.closest('.thumb');
+        if (thumb) { tiny ? thumb.classList.add('lowres') : thumb.classList.remove('lowres'); }
+        img.style.display = 'block';
+        if (fallback) fallback.style.display = 'none';
       };
       next();
     }
 
+    // === UI ===
     function card(v){
       const el = document.createElement('article');
       el.className = 'card';
@@ -177,16 +162,17 @@
     }
 
     function render(){
-      const q = $('#q').value.toLowerCase();
+      const q = ($('#q').value || '').toLowerCase();
       let vids = state.items;
       if (q) vids = vids.filter(v => (v.title||'').toLowerCase().includes(q));
       if (state.order === 'title-asc') vids.sort((a,b)=>(a.title||'').localeCompare(b.title||''));
-      else vids.sort((a,b)=> new Date(b.publishedAt) - new Date(a.publishedAt));
+      else vids.sort((a,b)=> new Date(b.publishedAt||0) - new Date(a.publishedAt||0));
       $('#grid').innerHTML = '';
       vids.forEach(v => $('#grid').appendChild(card(v)));
       $('#empty').hidden = vids.length > 0;
     }
 
+    // === Data ===
     async function ytJson(u){
       const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 10000));
       const r = await Promise.race([fetch(u), timeout]);
@@ -198,7 +184,6 @@
       const ch = await ytJson(`https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${id}&key=${k}`);
       const up = ch.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
       if (!up) throw new Error('uploads playlist no encontrada');
-      // Paginación completa
       let pageToken = '';
       const out = [];
       do {
@@ -238,27 +223,16 @@
     // === Auto-init ===
     (function init(){ applyTheme(); load(); })();
 
-    // === Mini tests (se ven en consola) ===
+    // === Tests mínimos (consola) ===
     ;(function tests(){
-      console.group('Tests setBestThumb placeholder detection');
-      // Simula que YT devuelve default.jpg => debería activar fallback
-      const fakeImg = { style:{display:'block'}, naturalWidth:120, naturalHeight:90, src:'https://i.ytimg.com/vi/ID/default.jpg' };
-      const fakeFb  = { style:{ display:'none' } };
-      // Probamos showFallback directamente
-      (function(){
-        const img = { ...fakeImg, onerror:null, onload:null };
-        const fb = { ...fakeFb };
-        // Inyectamos funciones y llamamos manualmente a onload para simular default.jpg cargado
-        setBestThumb({
-          set onerror(fn){ this._onerror = fn; },
-          set onload(fn){ this._onload = fn; },
-          set src(v){ this._src=v; },
-          get naturalWidth(){ return 120; },
-          get naturalHeight(){ return 90; },
-          style: { display:'block' }
-        }, 'ID', fb);
-        console.assert(true, 'setBestThumb inicializado');
-      })();
+      console.group('Smoke tests');
+      console.assert(typeof buildThumbCandidates === 'function', 'buildThumbCandidates existe');
+      const cand = buildThumbCandidates('TESTID');
+      console.assert(cand[0].includes('/hqdefault.'), 'Primer candidato es hqdefault');
+      console.assert(cand.some(u=>u.endsWith('/0.jpg')), 'Incluye 0.jpg');
+      console.assert(typeof setBestThumb === 'function', 'setBestThumb existe');
+      console.assert(typeof fetchChannelUploads === 'function', 'fetchChannelUploads existe');
+      console.assert(Array.isArray(PRESET_ITEMS) && PRESET_ITEMS.length > 0, 'PRESET_ITEMS existe y tiene elementos');
       console.groupEnd();
     })();
   </script>
