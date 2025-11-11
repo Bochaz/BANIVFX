@@ -4,27 +4,38 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>BANI VFX — Videos</title>
-  <meta name="description" content="Galería de videos de BANI VFX y GRAN BERTA." />
+  <meta name="description" content="Galería de videos de BANI VFX (YouTube) y GRAN BERTA (Instagram)." />
   <style>
     :root {
-      --bg: #0b0b0c;
+      --bg: #0b0b0c;   /* negro BANI */
       --card: #121214;
       --text: #f6f6f6;
       --muted: #a1a1a6;
-      --accent: #ff2ca5;
+      --accent: #ff2ca5; /* rosa BANI */
       --border: #202027;
     }
-    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background: var(--bg); color: var(--text); }
-    header { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(8px); background: rgba(11,11,12,0.8); border-bottom: 1px solid var(--border); }
+    :root.light { --bg:#fff; --card:#f7f7fb; --text:#141417; --muted:#6b6b6e; --border:#e7e7ef; }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:var(--bg); color:var(--text); }
+
+    header { position:sticky; top:0; z-index:10; backdrop-filter: blur(8px); background: color-mix(in oklab, var(--bg) 82%, transparent); border-bottom:1px solid var(--border); }
     .wrap { max-width: 1400px; margin: 0 auto; padding: 18px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
-    h1 { font-weight:800; font-size:20px; margin:0; display:flex; align-items:center; gap:10px; }
+    h1 { font-size:20px; margin:0; font-weight:800; letter-spacing:.2px; }
+
     .controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .tabs { display:flex; gap:8px; align-items:center; }
+    .tab { border:1px solid var(--border); background:var(--card); color:var(--text); padding:8px 12px; border-radius:999px; cursor:pointer; opacity:.85; }
+    .tab.active { outline:1px solid var(--accent); opacity:1; }
+
     .search { display:flex; align-items:center; gap:8px; border:1px solid var(--border); background:var(--card); border-radius:999px; padding:8px 12px; }
-    .search input { flex:1; border:0; outline:0; background:transparent; color:var(--text); font-size:14px; }
+    .search input { border:0; outline:0; background:transparent; color:var(--text); font-size:14px; }
     .btn { border:1px solid var(--border); background:var(--card); color:var(--text); padding:8px 12px; border-radius:999px; cursor:pointer; }
 
-    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(420px,1fr)); gap:20px; padding:24px; max-width:1600px; margin:auto; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(420px,1fr)); gap:20px; padding:24px; max-width:1600px; margin:0 auto; }
     .hidden { display:none !important; }
+
     .card { background:var(--card); border:1px solid var(--border); border-radius:18px; overflow:hidden; transition:transform .2s, box-shadow .2s, filter .3s; position:relative; }
     .card::after{ content:""; position:absolute; inset:-20%; background:radial-gradient(60% 50% at 50% 40%, rgba(255,44,165,.18), transparent 70%); opacity:0; transition:opacity .25s ease; pointer-events:none; }
     .card:hover { transform:translateY(-4px); box-shadow:0 10px 40px rgba(255,44,165,.25); filter:brightness(1.08); }
@@ -34,25 +45,18 @@
     .thumb.ig { aspect-ratio: 9/16; }
     .thumb img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .4s ease; }
     .thumb.lowres img { object-fit: contain; }
-    .thumb.lowres { background:#000; }
     .card:hover .thumb img { transform:scale(1.03); }
 
     .fallback { position:absolute; inset:0; background:linear-gradient(135deg,#1a1a1c,#2a2a2e); display:none; align-items:center; justify-content:center; color:var(--muted); font-size:14px; text-align:center; padding:10px; }
+
+    .ig-badge { position:absolute; top:8px; right:8px; font-size:12px; background:#ffffff1a; border:1px solid var(--border); color:var(--text); padding:4px 8px; border-radius:999px; backdrop-filter:blur(4px); }
+    .ig-toolbar { display:flex; gap:8px; align-items:center; }
+    .del-ig { position:absolute; top:8px; left:8px; border:none; background:#00000066; color:#fff; padding:4px 8px; border-radius:999px; cursor:pointer; font-size:12px; }
 
     .meta { padding:12px 14px 16px; }
     .title { font-size:16px; font-weight:700; margin:0 0 8px; }
     .muted { color:var(--muted); font-size:13px; }
     footer { text-align:center; color:var(--muted); font-size:12px; padding:20px; }
-
-    /* Tabs */
-    .tabs { display:flex; gap:8px; align-items:center; }
-    .tab { border:1px solid var(--border); background:var(--card); color:var(--text); padding:8px 12px; border-radius:999px; cursor:pointer; opacity:.85; }
-    .tab.active { outline:1px solid var(--accent); opacity:1; }
-
-    /* IG */
-    .ig-badge { position:absolute; top:8px; right:8px; font-size:12px; background:#ffffff1a; border:1px solid var(--border); color:var(--text); padding:4px 8px; border-radius:999px; backdrop-filter:blur(4px); }
-    .ig-toolbar { display:flex; gap:8px; align-items:center; }
-    .del-ig { position:absolute; top:8px; left:8px; border:none; background:#00000066; color:#fff; padding:4px 8px; border-radius:999px; cursor:pointer; font-size:12px; }
 
     dialog { border:none; border-radius:16px; background:var(--card); color:var(--text); width:min(1200px,96vw); box-shadow:0 12px 40px rgba(0,0,0,.6); }
     dialog::backdrop { background:rgba(0,0,0,.7); }
@@ -97,9 +101,11 @@
   </dialog>
 
   <script>
+    // ===== CONFIG =====
     const API_KEY = "AIzaSyAvH1ulPBHpFC2_2IHLR_x438yRBdMvdNk";
     const CHANNEL_ID = "UCLO5xC1DJcQFOL1kvUQzXLg";
 
+    // Reels/posts de @granberta pre-cargados (permanentes para todos)
     const GRAN_BERTA_IG_URLS = [
       "https://www.instagram.com/reel/Ce6bRhlFtKj/?igsh=MWtrb2F4bW9uYzBxeQ==",
       "https://www.instagram.com/reel/CZ-Yg6CFJON/?igsh=MXVwdGQ2amJ6anpu",
@@ -112,37 +118,29 @@
       "https://www.instagram.com/reel/DQUNrcLjTj7/?igsh=bzE2a25vMGJ0enFo",
       "https://www.instagram.com/reel/DQKv4OhktIa/?igsh=MXd6eHhidW9weDVkcA=="
     ];
-      // Ejemplos:
-      // 'https://www.instagram.com/reel/ABC123/',
-      // 'https://www.instagram.com/p/XYZ789/'
 
-    // ==== HELPERS ====
+    // ===== STATE & UTILS =====
     const $ = s => document.querySelector(s);
-    const state = { ytItems: [], igItems: [], order: 'date-desc', theme: localStorage.getItem('yt-theme') || 'dark', activeTab: 'yt' };
+    const state = { ytItems: [], igItems: [], order:'date-desc', theme: localStorage.getItem('yt-theme') || 'dark', activeTab: 'yt' };
 
-    function applyTheme(){
-      document.documentElement.classList.toggle('light', state.theme === 'light');
-      localStorage.setItem('yt-theme', state.theme);
-    }
-    $('#themeBtn').onclick = () => { state.theme = state.theme==='light' ? 'dark' : 'light'; applyTheme(); };
-    $('#sortBtn').onclick  = () => { state.order = state.order==='date-desc' ? 'title-asc' : 'date-desc'; renderActive(); };
+    function applyTheme(){ document.documentElement.classList.toggle('light', state.theme === 'light'); localStorage.setItem('yt-theme', state.theme); }
+    $('#themeBtn').onclick = ()=>{ state.theme = state.theme==='light' ? 'dark' : 'light'; applyTheme(); };
+    $('#sortBtn').onclick  = ()=>{ state.order = state.order==='date-desc' ? 'title-asc' : 'date-desc'; renderActive(); };
     $('#q').oninput = renderActive;
 
-    function escapeHtml(s=''){
-      return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
-    }
+    function escapeHtml(s=''){ return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c])); }
 
-    // === Instagram helpers ===
+    // ===== Instagram helpers =====
     function parseInstagramShortcode(url){
       try{ const u=new URL(url); const host=u.hostname.replace(/^www\./,''); if(!host.endsWith('instagram.com')) return null; const m=u.pathname.match(/\/(p|reel|tv)\/([\w-]+)/); return m?m[2]:null; }catch{ return null; }
     }
     function igEmbedUrl(code){ return `https://www.instagram.com/reel/${code}/embed`; }
 
-    // === Thumbnails (YouTube) ===
+    // ===== YouTube thumbs =====
     function buildThumbCandidates(id){
-      const jpgs = ['hqdefault.jpg','sddefault.jpg','maxresdefault.jpg','mqdefault.jpg','default.jpg','0.jpg'];
-      const webps = ['hqdefault.webp','sddefault.webp','maxresdefault.webp','mqdefault.webp'];
-      const hosts = [ f=>`https://i.ytimg.com/vi/${id}/${f}`, f=>`https://img.youtube.com/vi/${id}/${f}`, f=>`https://i.ytimg.com/vi_webp/${id}/${f}` ];
+      const jpgs=['hqdefault.jpg','sddefault.jpg','maxresdefault.jpg','mqdefault.jpg','default.jpg','0.jpg'];
+      const webps=['hqdefault.webp','sddefault.webp','maxresdefault.webp','mqdefault.webp'];
+      const hosts=[ f=>`https://i.ytimg.com/vi/${id}/${f}`, f=>`https://img.youtube.com/vi/${id}/${f}`, f=>`https://i.ytimg.com/vi_webp/${id}/${f}` ];
       const seq=[]; hosts.slice(0,2).forEach(h=>jpgs.forEach(f=>seq.push(h(f)))); hosts.slice(2,3).forEach(h=>webps.forEach(f=>seq.push(h(f))));
       return seq;
     }
@@ -154,11 +152,11 @@
       next();
     }
 
-    // === UI cards ===
+    // ===== Cards =====
     function cardYt(v){
-      const el = document.createElement('article'); el.className='card';
-      const date = v.publishedAt ? new Date(v.publishedAt).toLocaleDateString('es-AR', {year:'numeric', month:'short', day:'2-digit'}) : '';
-      el.innerHTML = `
+      const el=document.createElement('article'); el.className='card';
+      const date = v.publishedAt ? new Date(v.publishedAt).toLocaleDateString('es-AR',{year:'numeric',month:'short',day:'2-digit'}) : '';
+      el.innerHTML=`
         <div class='thumb' data-id='${v.id}' data-title='${escapeHtml(v.title)}'>
           <img alt='${escapeHtml(v.title)}'>
           <div class='fallback'>${escapeHtml(v.title)}</div>
@@ -167,31 +165,35 @@
           <h3 class='title'>${escapeHtml(v.title)}</h3>
           <div class='muted'>${date}</div>
         </div>`;
-      const img = el.querySelector('img'); const fb = el.querySelector('.fallback'); setBestThumb(img, v.id, fb);
-      el.querySelector('.thumb').onclick = () => openModal(v.id, v.title);
+      const img=el.querySelector('img'); const fb=el.querySelector('.fallback'); setBestThumb(img,v.id,fb);
+      el.querySelector('.thumb').onclick=()=>openModal(v.id,v.title);
       return el;
     }
 
     function cardIg(v, idx){
-      const el = document.createElement('article'); el.className='card';
-      const date = v.publishedAt ? new Date(v.publishedAt).toLocaleDateString('es-AR', {year:'numeric', month:'short', day:'2-digit'}) : '';
-      el.innerHTML = `
+      const el=document.createElement('article'); el.className='card';
+      const date = v.publishedAt ? new Date(v.publishedAt).toLocaleDateString('es-AR',{year:'numeric',month:'short',day:'2-digit'}) : '';
+      const embed = igEmbedUrl(v.id);
+      el.innerHTML=`
         <button class='del-ig' title='Eliminar' aria-label='Eliminar'>&times;</button>
-        <div class='thumb' data-type='ig' data-id='${v.id}' data-title='${escapeHtml(v.title||'Instagram')}'>
-          <div class='fallback' style='display:flex;'>${escapeHtml(v.title||'Instagram')}</div>
+        <div class='thumb ig' data-type='ig' data-id='${v.id}' data-title='${escapeHtml(v.title||'Instagram')}'>
+          <iframe class='ig-embed' title='Instagram embed' loading='lazy' allowtransparency='true' frameborder='0'
+                  data-src='${embed}' style='position:absolute;inset:0;width:100%;height:100%;pointer-events:none;'></iframe>
+          <div class='fallback' style='display:none;'>${escapeHtml(v.title||'Instagram')}</div>
           <span class='ig-badge'>Instagram</span>
         </div>
         <div class='meta'>
           <h3 class='title'>${escapeHtml(v.title||'—')}</h3>
           <div class='muted'>${date}</div>
         </div>`;
-      el.querySelector('.thumb').onclick = () => openModalIG(v.id, v.title);
-      el.querySelector('.del-ig').onclick = (ev)=>{ ev.stopPropagation(); removeIg(idx); };
+      el.querySelector('.thumb').onclick=()=>openModalIG(v.id,v.title);
+      el.querySelector('.del-ig').onclick=(ev)=>{ ev.stopPropagation(); removeIg(idx); };
       return el;
     }
 
+    // ===== Render =====
     function renderYt(){
-      const q = ($('#q').value || '').toLowerCase();
+      const q = ($('#q').value||'').toLowerCase();
       let vids = state.ytItems.slice();
       if(q) vids = vids.filter(v => (v.title||'').toLowerCase().includes(q));
       if(state.order==='title-asc') vids.sort((a,b)=>(a.title||'').localeCompare(b.title||''));
@@ -200,14 +202,22 @@
       $('#empty').hidden = vids.length>0 || state.activeTab==='ig';
     }
     function renderIg(){
-      const q = ($('#q').value || '').toLowerCase(); let posts = state.igItems.slice();
+      const q = ($('#q').value||'').toLowerCase(); let posts = state.igItems.slice();
       if(q) posts = posts.filter(v => (v.title||'Instagram').toLowerCase().includes(q));
       $('#gridIg').innerHTML=''; posts.forEach((v,i)=>$('#gridIg').appendChild(cardIg(v,i)));
+      // Lazy-load embeds
+      const embeds = Array.from(document.querySelectorAll('#gridIg .ig-embed[data-src]'));
+      if('IntersectionObserver' in window){
+        const io = new IntersectionObserver(entries=>{
+          entries.forEach(e=>{ if(e.isIntersecting){ const ifr=e.target; if(!ifr.src) ifr.src=ifr.getAttribute('data-src'); io.unobserve(ifr); } });
+        },{ rootMargin:'200px' });
+        embeds.forEach(el=>io.observe(el));
+      } else { embeds.forEach(ifr=>{ if(!ifr.src) ifr.src=ifr.getAttribute('data-src'); }); }
       $('#empty').hidden = posts.length>0 || state.activeTab==='yt';
     }
-    function renderActive(){ state.activeTab==='yt' ? renderYt() : renderIg(); }
+    function renderActive(){ (state.activeTab==='yt') ? renderYt() : renderIg(); }
 
-    // === Data (YouTube) ===
+    // ===== Data (YouTube) =====
     const PRESET_ITEMS = [
       { id:"-r8WB0Qfcmg", title:"VFX BREAKDOWN - Museo Conmebol | BANI VFX", publishedAt:null },
       { id:"m4NQlZl_jTM", title:"SERIES - La mente del poder | BANI VFX", publishedAt:null },
@@ -217,92 +227,73 @@
       { id:"tmXkohN21eY", title:"VFX BREAKDOWN - La Piedad | BANI VFX", publishedAt:null }
     ];
 
-    async function ytJson(u){
-      const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 10000));
-      const r = await Promise.race([fetch(u), timeout]); if(!r.ok) throw new Error('HTTP '+r.status); return r.json();
-    }
-    async function fetchChannelUploads(k, id){
-      const ch = await ytJson(`https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${id}&key=${k}`);
-      const up = ch.items?.[0]?.contentDetails?.relatedPlaylists?.uploads; if(!up) throw new Error('uploads playlist no encontrada');
-      let pageToken=''; const out=[];
-      do{ const url=`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${up}&key=${k}${pageToken?`&pageToken=${pageToken}`:''}`;
-          const json=await ytJson(url);
-          json.items?.forEach(it=>{ const s=it.snippet||{}; if(s.resourceId?.videoId) out.push({ id:s.resourceId.videoId, title:s.title, publishedAt:s.publishedAt }); });
-          pageToken=json.nextPageToken||''; } while(pageToken);
+    async function ytJson(u){ const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000)); const r=await Promise.race([fetch(u),timeout]); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
+    async function fetchChannelUploads(k,id){
+      const ch=await ytJson(`https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${id}&key=${k}`);
+      const up=ch.items?.[0]?.contentDetails?.relatedPlaylists?.uploads; if(!up) throw new Error('uploads playlist no encontrada');
+      let pageToken=''; const out=[]; do {
+        const url=`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${up}&key=${k}${pageToken?`&pageToken=${pageToken}`:''}`;
+        const json=await ytJson(url);
+        json.items?.forEach(it=>{ const s=it.snippet||{}; if(s.resourceId?.videoId) out.push({ id:s.resourceId.videoId, title:s.title, publishedAt:s.publishedAt }); });
+        pageToken=json.nextPageToken||''; } while(pageToken);
       return out;
     }
 
-    async function load(){
-      try{
-        $('#empty').textContent='Cargando…';
-        const items = await fetchChannelUploads(API_KEY, CHANNEL_ID);
-        if(!items.length) throw new Error('sin_items');
-        state.ytItems = items; renderActive();
-      }catch(e){
-        console.warn('Fallo API, uso fallback local:', e);
-        state.ytItems = PRESET_ITEMS.slice(); renderActive();
-        if(!state.ytItems.length && state.activeTab==='yt'){ $('#empty').textContent='No pudimos cargar videos (API/cuota).'; }
-      }
-    }
+    // ===== Modal =====
+    function openModal(id,t){ $('#modalTitle').textContent=t||'Reproduciendo…'; $('#player').src=`https://www.youtube.com/embed/${id}?autoplay=1`; $('#modal').showModal(); }
+    function openModalIG(code,t){ $('#modalTitle').textContent=t||'Reproduciendo…'; $('#player').src=igEmbedUrl(code); $('#modal').showModal(); }
+    $('#closeModal').onclick=()=>{ $('#player').src=''; $('#modal').close(); };
 
-    // === Modal ===
-    function openModal(id, t){ $('#modalTitle').textContent=t||'Reproduciendo…'; $('#player').src=`https://www.youtube.com/embed/${id}?autoplay=1`; $('#modal').showModal(); }
-    function openModalIG(code, t){ $('#modalTitle').textContent=t||'Reproduciendo…'; $('#player').src=igEmbedUrl(code); $('#modal').showModal(); }
-    $('#closeModal').onclick = () => { $('#player').src=''; $('#modal').close(); };
-
-    // === IG persistence (localStorage) ===
-    const IG_STORE_KEY = 'granberta_ig_urls';
+    // ===== IG persistence (navegador) =====
+    const IG_STORE_KEY='granberta_ig_urls';
     function saveIg(){ localStorage.setItem(IG_STORE_KEY, JSON.stringify(state.igItems)); }
     function loadIg(){
-      const raw = localStorage.getItem(IG_STORE_KEY);
-      if(raw){ try{ const arr=JSON.parse(raw); if(Array.isArray(arr)) state.igItems = arr; }catch{ /* ignore */ } }
+      const raw=localStorage.getItem(IG_STORE_KEY);
+      if(raw){ try{ const arr=JSON.parse(raw); if(Array.isArray(arr)) state.igItems=arr; }catch{}
+      }
       if(!state.igItems.length && GRAN_BERTA_IG_URLS.length){
-        // seed desde el código
-        state.igItems = GRAN_BERTA_IG_URLS.map(url=>{ const code=parseInstagramShortcode(url); return code?{id:code,title:'Instagram',publishedAt:null}:null; }).filter(Boolean);
+        state.igItems = GRAN_BERTA_IG_URLS.map(url=>{ const code=parseInstagramShortcode(url); return code?{ id:code, title:'Instagram', publishedAt:null }:null; }).filter(Boolean);
       }
     }
     function addIgFromPrompt(){
-      const input = prompt('Pegá una o más URLs de Instagram (separadas por coma)');
-      if(!input) return;
-      input.split(',').map(s=>s.trim()).filter(Boolean).forEach(url=>{
-        const code = parseInstagramShortcode(url);
-        if(code && !state.igItems.some(x=>x.id===code)) state.igItems.push({ id:code, title:'Instagram', publishedAt:null });
-      });
+      const input=prompt('Pegá una o más URLs de Instagram (separadas por coma)'); if(!input) return;
+      input.split(',').map(s=>s.trim()).filter(Boolean).forEach(url=>{ const code=parseInstagramShortcode(url); if(code && !state.igItems.some(x=>x.id===code)) state.igItems.push({ id:code, title:'Instagram', publishedAt:null }); });
       saveIg(); renderActive();
     }
     function removeIg(index){ state.igItems.splice(index,1); saveIg(); renderActive(); }
-    function exportIg(){
-      const list = state.igItems.map(x=>`https://www.instagram.com/reel/${x.id}/`);
-      const txt = JSON.stringify(list, null, 2);
-      navigator.clipboard?.writeText(txt).then(()=>alert('Lista copiada al portapapeles. Pegala en GRAN_BERTA_IG_URLS si querés que sea global.')).catch(()=>alert('No se pudo copiar.'));
-    }
+    function exportIg(){ const list=state.igItems.map(x=>`https://www.instagram.com/reel/${x.id}/`); const txt=JSON.stringify(list,null,2); navigator.clipboard?.writeText(txt).then(()=>alert('Lista copiada. Pegala en GRAN_BERTA_IG_URLS si querés que sea global.')).catch(()=>alert('No se pudo copiar.')); }
 
-    // === Auto-init ===
+    // ===== Init =====
     (function init(){
       applyTheme();
       // Tabs
-      $('#tabYt').onclick = ()=>{ state.activeTab='yt'; $('#tabYt').classList.add('active'); $('#tabIg').classList.remove('active'); $('#gridYt').classList.remove('hidden'); $('#gridIg').classList.add('hidden'); $('#igToolbar').classList.add('hidden'); renderActive(); };
-      $('#tabIg').onclick = ()=>{ state.activeTab='ig'; $('#tabIg').classList.add('active'); $('#tabYt').classList.remove('active'); $('#gridIg').classList.remove('hidden'); $('#gridYt').classList.add('hidden'); $('#igToolbar').classList.remove('hidden'); renderActive(); };
+      $('#tabYt').onclick=()=>{ state.activeTab='yt'; $('#tabYt').classList.add('active'); $('#tabIg').classList.remove('active'); $('#gridYt').classList.remove('hidden'); $('#gridIg').classList.add('hidden'); $('#igToolbar').classList.add('hidden'); renderActive(); };
+      $('#tabIg').onclick=()=>{ state.activeTab='ig'; $('#tabIg').classList.add('active'); $('#tabYt').classList.remove('active'); $('#gridIg').classList.remove('hidden'); $('#gridYt').classList.add('hidden'); $('#igToolbar').classList.remove('hidden'); renderActive(); };
 
       // IG toolbar
       $('#addIg').onclick = addIgFromPrompt;
       $('#exportIg').onclick = exportIg;
 
       loadIg();
-      load();
+      // Cargar YouTube
+      (async()=>{
+        try{
+          $('#empty').textContent='Cargando…';
+          const items=await fetchChannelUploads(API_KEY, CHANNEL_ID);
+          state.ytItems = items.length? items : PRESET_ITEMS.slice();
+        }catch(e){ console.warn('Fallo API YouTube, uso preset:', e); state.ytItems = PRESET_ITEMS.slice(); }
+        renderActive();
+      })();
     })();
 
-    // === Tests mínimos (consola) ===
+    // ===== Tests mínimos (consola) =====
     ;(function tests(){
       console.group('Smoke tests');
-      console.assert(typeof buildThumbCandidates==='function','buildThumbCandidates existe');
-      const cand = buildThumbCandidates('TESTID');
-      console.assert(Array.isArray(cand) && cand.length>0, 'candidatos ok');
-      console.assert(typeof setBestThumb==='function','setBestThumb existe');
-      console.assert(typeof fetchChannelUploads==='function','fetchChannelUploads existe');
       console.assert(typeof parseInstagramShortcode==='function','parseInstagramShortcode existe');
-      console.assert(parseInstagramShortcode('https://www.instagram.com/reel/ABC123/')==='ABC123','parseInstagramShortcode extrae shortcode');
-      console.assert(igEmbedUrl('XYZ').includes('/reel/XYZ/embed'),'igEmbedUrl ok');
+      console.assert(parseInstagramShortcode('https://www.instagram.com/reel/ABC123/')==='ABC123','shortcode ok');
+      console.assert(typeof igEmbedUrl==='function' && igEmbedUrl('XYZ').includes('/reel/XYZ/embed'),'igEmbedUrl ok');
+      console.assert(typeof buildThumbCandidates==='function' && buildThumbCandidates('ID').length>0,'candidatos thumb ok');
+      console.assert(typeof setBestThumb==='function','setBestThumb existe');
       console.assert(Array.isArray(state.ytItems) && Array.isArray(state.igItems),'states ok');
       console.groupEnd();
     })();
