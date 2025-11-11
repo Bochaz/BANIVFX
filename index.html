@@ -31,6 +31,7 @@
     .card:hover::after{ opacity:1; }
 
     .thumb { aspect-ratio:16/9; width:100%; background:#000; overflow:hidden; position:relative; }
+    .thumb.ig { aspect-ratio: 9/16; }
     .thumb img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .4s ease; }
     .thumb.lowres img { object-fit: contain; }
     .thumb.lowres { background:#000; }
@@ -48,7 +49,7 @@
     .tab { border:1px solid var(--border); background:var(--card); color:var(--text); padding:8px 12px; border-radius:999px; cursor:pointer; opacity:.85; }
     .tab.active { outline:1px solid var(--accent); opacity:1; }
 
-    /* IG badge & controls */
+    /* IG */
     .ig-badge { position:absolute; top:8px; right:8px; font-size:12px; background:#ffffff1a; border:1px solid var(--border); color:var(--text); padding:4px 8px; border-radius:999px; backdrop-filter:blur(4px); }
     .ig-toolbar { display:flex; gap:8px; align-items:center; }
     .del-ig { position:absolute; top:8px; left:8px; border:none; background:#00000066; color:#fff; padding:4px 8px; border-radius:999px; cursor:pointer; font-size:12px; }
@@ -96,11 +97,9 @@
   </dialog>
 
   <script>
-    // ==== CONFIG ====
     const API_KEY = "AIzaSyAvH1ulPBHpFC2_2IHLR_x438yRBdMvdNk";
     const CHANNEL_ID = "UCLO5xC1DJcQFOL1kvUQzXLg";
 
-    // Lista IG por defecto (editá aquí si querés que queden "globales" en el repo)
     const GRAN_BERTA_IG_URLS = [
       "https://www.instagram.com/reel/Ce6bRhlFtKj/?igsh=MWtrb2F4bW9uYzBxeQ==",
       "https://www.instagram.com/reel/CZ-Yg6CFJON/?igsh=MXVwdGQ2amJ6anpu",
