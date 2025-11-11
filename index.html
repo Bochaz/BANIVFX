@@ -49,7 +49,9 @@
 
     .fallback { position:absolute; inset:0; background:linear-gradient(135deg,#1a1a1c,#2a2a2e); display:none; align-items:center; justify-content:center; color:var(--muted); font-size:14px; text-align:center; padding:10px; }
 
-    .ig-badge { position:absolute; top:8px; right:8px; font-size:12px; background:#ffffff1a; border:1px solid var(--border); color:var(--text); padding:4px 8px; border-radius:999px; backdrop-filter:blur(4px); }
+    /* IG small top bar */
+    .ig-bar { position:absolute; left:0; right:0; top:0; padding:8px 10px; display:flex; align-items:center; justify-content:space-between; font-size:12px; color:#fff; background:linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,0)); opacity:0; transform: translateY(-6px); transition: opacity .2s ease, transform .2s ease; }
+    .card:hover .ig-bar { opacity:1; transform: translateY(0); }
     .ig-toolbar { display:flex; gap:8px; align-items:center; }
     .del-ig { position:absolute; top:8px; left:8px; border:none; background:#00000066; color:#fff; padding:4px 8px; border-radius:999px; cursor:pointer; font-size:12px; }
 
@@ -62,6 +64,11 @@
     dialog::backdrop { background:rgba(0,0,0,.7); }
     .modal-head { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-bottom:1px solid var(--border); }
     .player { width:100%; aspect-ratio:16/9; background:#000; }
+      /* Hover caption for IG */
+    .caption { position:absolute; left:0; right:0; bottom:0; padding:10px 12px; font-size:12px; line-height:1.35; color:#fff; background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.65) 90%); opacity:0; transform: translateY(6px); transition: opacity .2s ease, transform .2s ease; max-height:42%; overflow:hidden; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; }
+    .card:hover .caption { opacity:1; transform: translateY(0); }
+    .thumb .skeleton { position:absolute; inset:0; background: linear-gradient(90deg, #1a1a1c 25%, #222227 37%, #1a1a1c 63%); background-size: 400% 100%; animation: shimmer 1.2s infinite; }
+    @keyframes shimmer { 0%{background-position:0 0;} 100%{background-position: -400% 0;} }
   </style>
 </head>
 <body>
@@ -135,6 +142,21 @@
       try{ const u=new URL(url); const host=u.hostname.replace(/^www\./,''); if(!host.endsWith('instagram.com')) return null; const m=u.pathname.match(/\/(p|reel|tv)\/([\w-]+)/); return m?m[2]:null; }catch{ return null; }
     }
     function igEmbedUrl(code){ return `https://www.instagram.com/reel/${code}/embed`; }
+    async function fetchIgMeta(shortcode){
+      const cacheKey = `ig_meta_${shortcode}`;
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) { try { return JSON.parse(cached); } catch {} }
+      const url = `https://r.jina.ai/http://www.instagram.com/reel/${shortcode}/`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('IG meta HTTP '+res.status);
+      const html = await res.text();
+      const img = (html.match(/property=\"og:image\" content=\"([^\"]+)/) || [])[1] || '';
+      const title = (html.match(/property=\"og:title\" content=\"([^\"]+)/) || [])[1] || '';
+      const desc = (html.match(/property=\"og:description\" content=\"([^\"]+)/) || [])[1] || '';
+      const meta = { thumbnail: img, title, description: desc };
+      sessionStorage.setItem(cacheKey, JSON.stringify(meta));
+      return meta;
+    }/embed`; }
 
     // ===== YouTube thumbs =====
     function buildThumbCandidates(id){
@@ -173,19 +195,35 @@
     function cardIg(v, idx){
       const el=document.createElement('article'); el.className='card';
       const date = v.publishedAt ? new Date(v.publishedAt).toLocaleDateString('es-AR',{year:'numeric',month:'short',day:'2-digit'}) : '';
-      const embed = igEmbedUrl(v.id);
       el.innerHTML=`
         <button class='del-ig' title='Eliminar' aria-label='Eliminar'>&times;</button>
-        <div class='thumb ig' data-type='ig' data-id='${v.id}' data-title='${escapeHtml(v.title||'Instagram')}'>
-          <iframe class='ig-embed' title='Instagram embed' loading='lazy' allowtransparency='true' frameborder='0'
-                  data-src='${embed}' style='position:absolute;inset:0;width:100%;height:100%;pointer-events:none;'></iframe>
-          <div class='fallback' style='display:none;'>${escapeHtml(v.title||'Instagram')}</div>
-          <span class='ig-badge'>Instagram</span>
+        <div class='thumb ig' data-type='ig' data-id='$2' data-title='$3'>
+          <div class='skeleton' aria-hidden='true'></div>
+          <img alt='$3' style='display:none;'>
+          <div class='ig-bar'>
+            <span class='ig-handle'>@granberta</span>
+            <span class='ig-icon' aria-hidden='true'>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm5 5a5 5 0 1 0 .001 10.001A5 5 0 0 0 12 7zm0 2.2a2.8 2.8 0 1 1 0 5.6 2.8 2.8 0 0 1 0-5.6zM18.5 6a1.25 1.25 0 1 0 0 2.5A1.25 1.25 0 0 0 18.5 6z"/></svg>
+            </span>
+          </div>
+          <div class='caption'></div
+          
         </div>
         <div class='meta'>
           <h3 class='title'>${escapeHtml(v.title||'—')}</h3>
           <div class='muted'>${date}</div>
         </div>`;
+      const thumb = el.querySelector('.thumb');
+      const img = el.querySelector('img');
+      const cap = el.querySelector('.caption');
+      fetchIgMeta(v.id).then(meta=>{
+        if (meta.thumbnail) { img.src = meta.thumbnail; img.style.display='block'; }
+        cap.textContent = meta.description || meta.title || (v.title||'');
+        thumb.querySelector('.skeleton')?.remove();
+      }).catch(()=>{
+        cap.textContent = v.title || 'Instagram';
+        thumb.querySelector('.skeleton')?.remove();
+      });
       el.querySelector('.thumb').onclick=()=>openModalIG(v.id,v.title);
       el.querySelector('.del-ig').onclick=(ev)=>{ ev.stopPropagation(); removeIg(idx); };
       return el;
@@ -205,11 +243,8 @@
       const q = ($('#q').value||'').toLowerCase(); let posts = state.igItems.slice();
       if(q) posts = posts.filter(v => (v.title||'Instagram').toLowerCase().includes(q));
       $('#gridIg').innerHTML=''; posts.forEach((v,i)=>$('#gridIg').appendChild(cardIg(v,i)));
-      // Lazy-load embeds
-      const embeds = Array.from(document.querySelectorAll('#gridIg .ig-embed[data-src]'));
-      if('IntersectionObserver' in window){
-        const io = new IntersectionObserver(entries=>{
-          entries.forEach(e=>{ if(e.isIntersecting){ const ifr=e.target; if(!ifr.src) ifr.src=ifr.getAttribute('data-src'); io.unobserve(ifr); } });
+      $('#empty').hidden = posts.length>0 || state.activeTab==='yt';
+    } });
         },{ rootMargin:'200px' });
         embeds.forEach(el=>io.observe(el));
       } else { embeds.forEach(ifr=>{ if(!ifr.src) ifr.src=ifr.getAttribute('data-src'); }); }
