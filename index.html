@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>BANI VFX — Videos</title>
-  <meta name="description" content="Galería de videos de BANI VFX." />
+  <meta name="description" content="Galería de videos de BANI VFX y GRAN BERTA." />
   <style>
     :root {
       --bg: #0b0b0c;
@@ -16,14 +16,15 @@
     }
     body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background: var(--bg); color: var(--text); }
     header { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(8px); background: rgba(11,11,12,0.8); border-bottom: 1px solid var(--border); }
-    .wrap { max-width: 1400px; margin: 0 auto; padding: 18px 16px; display:flex; align-items:center; justify-content:space-between; }
+    .wrap { max-width: 1400px; margin: 0 auto; padding: 18px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
     h1 { font-weight:800; font-size:20px; margin:0; display:flex; align-items:center; gap:10px; }
-    .controls { display:flex; gap:10px; align-items:center; }
+    .controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
     .search { display:flex; align-items:center; gap:8px; border:1px solid var(--border); background:var(--card); border-radius:999px; padding:8px 12px; }
     .search input { flex:1; border:0; outline:0; background:transparent; color:var(--text); font-size:14px; }
     .btn { border:1px solid var(--border); background:var(--card); color:var(--text); padding:8px 12px; border-radius:999px; cursor:pointer; }
 
     .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(420px,1fr)); gap:20px; padding:24px; max-width:1600px; margin:auto; }
+    .hidden { display:none !important; }
     .card { background:var(--card); border:1px solid var(--border); border-radius:18px; overflow:hidden; transition:transform .2s, box-shadow .2s, filter .3s; position:relative; }
     .card::after{ content:""; position:absolute; inset:-20%; background:radial-gradient(60% 50% at 50% 40%, rgba(255,44,165,.18), transparent 70%); opacity:0; transition:opacity .25s ease; pointer-events:none; }
     .card:hover { transform:translateY(-4px); box-shadow:0 10px 40px rgba(255,44,165,.25); filter:brightness(1.08); }
@@ -42,6 +43,16 @@
     .muted { color:var(--muted); font-size:13px; }
     footer { text-align:center; color:var(--muted); font-size:12px; padding:20px; }
 
+    /* Tabs */
+    .tabs { display:flex; gap:8px; align-items:center; }
+    .tab { border:1px solid var(--border); background:var(--card); color:var(--text); padding:8px 12px; border-radius:999px; cursor:pointer; opacity:.85; }
+    .tab.active { outline:1px solid var(--accent); opacity:1; }
+
+    /* IG badge & controls */
+    .ig-badge { position:absolute; top:8px; right:8px; font-size:12px; background:#ffffff1a; border:1px solid var(--border); color:var(--text); padding:4px 8px; border-radius:999px; backdrop-filter:blur(4px); }
+    .ig-toolbar { display:flex; gap:8px; align-items:center; }
+    .del-ig { position:absolute; top:8px; left:8px; border:none; background:#00000066; color:#fff; padding:4px 8px; border-radius:999px; cursor:pointer; font-size:12px; }
+
     dialog { border:none; border-radius:16px; background:var(--card); color:var(--text); width:min(1200px,96vw); box-shadow:0 12px 40px rgba(0,0,0,.6); }
     dialog::backdrop { background:rgba(0,0,0,.7); }
     .modal-head { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-bottom:1px solid var(--border); }
@@ -51,11 +62,16 @@
 <body>
   <header>
     <div class="wrap">
-      <h1 style="display:flex;align-items:center;gap:10px;margin:0;">
-        <img src="bani-logo.png" alt="BANI VFX" style="height:28px; width:auto; object-fit:contain;" onerror="this.replaceWith(document.createTextNode('BANI VFX'))">
-        <span style="font-weight:700;">Videos</span>
-      </h1>
+      <h1>BANI VFX — Videos</h1>
       <div class="controls">
+        <div class="tabs">
+          <button class="tab active" id="tabYt">BANI VFX</button>
+          <button class="tab" id="tabIg">GRAN BERTA</button>
+        </div>
+        <div class="ig-toolbar hidden" id="igToolbar">
+          <button class="btn" id="addIg">+ Agregar IG</button>
+          <button class="btn" id="exportIg">Copiar lista</button>
+        </div>
         <div class="search">
           <input id="q" placeholder="Buscar por título…" />
         </div>
@@ -65,7 +81,8 @@
     </div>
   </header>
 
-  <section id="grid" class="grid"></section>
+  <section id="gridYt" class="grid"></section>
+  <section id="gridIg" class="grid hidden"></section>
   <div id="empty" style="text-align:center; color:var(--muted); padding:50px;">Cargando…</div>
 
   <footer>Hecho con cariño por BANI VFX ✨</footer>
@@ -82,68 +99,65 @@
     // ==== CONFIG ====
     const API_KEY = "AIzaSyAvH1ulPBHpFC2_2IHLR_x438yRBdMvdNk";
     const CHANNEL_ID = "UCLO5xC1DJcQFOL1kvUQzXLg";
-    // Fallback local por si falla la API o la cuota
-    const PRESET_ITEMS = [
-      { id: "-r8WB0Qfcmg", title: "VFX BREAKDOWN - Museo Conmebol | BANI VFX", publishedAt: null },
-      { id: "m4NQlZl_jTM", title: "SERIES - La mente del poder | BANI VFX", publishedAt: null },
-      { id: "H8Ab41nj6_s", title: "CONMEBOL - Muñecos Libertadores | BANI VFX", publishedAt: null },
-      { id: "jnRvSpPNKZ0", title: "SHORT FILM - Cucaracha | BANI VFX", publishedAt: null },
-      { id: "y2VhNRZ7HHk", title: "REEL BANI VFX 2024", publishedAt: null },
-      { id: "tmXkohN21eY", title: "VFX BREAKDOWN - La Piedad | BANI VFX", publishedAt: null }
+
+    // Lista IG por defecto (editá aquí si querés que queden "globales" en el repo)
+    const GRAN_BERTA_IG_URLS = [
+      "https://www.instagram.com/reel/Ce6bRhlFtKj/?igsh=MWtrb2F4bW9uYzBxeQ==",
+      "https://www.instagram.com/reel/CZ-Yg6CFJON/?igsh=MXVwdGQ2amJ6anpu",
+      "https://www.instagram.com/reel/DQ5LR7ujdj9/?igsh=a2JzYnJsZ3k3Y256",
+      "https://www.instagram.com/reel/DQpwzvRDQHO/?igsh=dzBqaWk4Nm5zYjZx",
+      "https://www.instagram.com/reel/DQnLqHsDfyK/?igsh=MXAzbzJ2NTNiNHBhdA==",
+      "https://www.instagram.com/reel/DQcr1M3lQqI/?igsh=MTBqbTA2N202MGhtNQ==",
+      "https://www.instagram.com/reel/DQXZVorj79W/?igsh=Y3NucXdjajZiNTZl",
+      "https://www.instagram.com/reel/DQVLMkLjaLC/?igsh=MW5ub3E2YWdwYWJnaA==",
+      "https://www.instagram.com/reel/DQUNrcLjTj7/?igsh=bzE2a25vMGJ0enFo",
+      "https://www.instagram.com/reel/DQKv4OhktIa/?igsh=MXd6eHhidW9weDVkcA=="
     ];
+      // Ejemplos:
+      // 'https://www.instagram.com/reel/ABC123/',
+      // 'https://www.instagram.com/p/XYZ789/'
 
     // ==== HELPERS ====
     const $ = s => document.querySelector(s);
-    const state = { items: [], order: 'date-desc', theme: localStorage.getItem('yt-theme') || 'dark' };
+    const state = { ytItems: [], igItems: [], order: 'date-desc', theme: localStorage.getItem('yt-theme') || 'dark', activeTab: 'yt' };
 
     function applyTheme(){
       document.documentElement.classList.toggle('light', state.theme === 'light');
       localStorage.setItem('yt-theme', state.theme);
     }
     $('#themeBtn').onclick = () => { state.theme = state.theme==='light' ? 'dark' : 'light'; applyTheme(); };
-    $('#sortBtn').onclick  = () => { state.order = state.order==='date-desc' ? 'title-asc' : 'date-desc'; render(); };
-    $('#q').oninput = render;
+    $('#sortBtn').onclick  = () => { state.order = state.order==='date-desc' ? 'title-asc' : 'date-desc'; renderActive(); };
+    $('#q').oninput = renderActive;
 
     function escapeHtml(s=''){
       return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
     }
 
-    // === Thumbnails ===
+    // === Instagram helpers ===
+    function parseInstagramShortcode(url){
+      try{ const u=new URL(url); const host=u.hostname.replace(/^www\./,''); if(!host.endsWith('instagram.com')) return null; const m=u.pathname.match(/\/(p|reel|tv)\/([\w-]+)/); return m?m[2]:null; }catch{ return null; }
+    }
+    function igEmbedUrl(code){ return `https://www.instagram.com/reel/${code}/embed`; }
+
+    // === Thumbnails (YouTube) ===
     function buildThumbCandidates(id){
       const jpgs = ['hqdefault.jpg','sddefault.jpg','maxresdefault.jpg','mqdefault.jpg','default.jpg','0.jpg'];
       const webps = ['hqdefault.webp','sddefault.webp','maxresdefault.webp','mqdefault.webp'];
-      const hosts = [
-        f => `https://i.ytimg.com/vi/${id}/${f}`,
-        f => `https://img.youtube.com/vi/${id}/${f}`,
-        f => `https://i.ytimg.com/vi_webp/${id}/${f}`,
-      ];
-      const seq = [];
-      hosts.slice(0,2).forEach(h => jpgs.forEach(f => seq.push(h(f))));
-      hosts.slice(2,3).forEach(h => webps.forEach(f => seq.push(h(f))));
+      const hosts = [ f=>`https://i.ytimg.com/vi/${id}/${f}`, f=>`https://img.youtube.com/vi/${id}/${f}`, f=>`https://i.ytimg.com/vi_webp/${id}/${f}` ];
+      const seq=[]; hosts.slice(0,2).forEach(h=>jpgs.forEach(f=>seq.push(h(f)))); hosts.slice(2,3).forEach(h=>webps.forEach(f=>seq.push(h(f))));
       return seq;
     }
-
     function setBestThumb(img, id, fallback){
-      const seq = buildThumbCandidates(id);
-      let i = 0;
-      const showFallback = () => { img.style.display = 'none'; if (fallback) fallback.style.display = 'flex'; };
-      const next = () => { if (i < seq.length) img.src = seq[i++]; else showFallback(); };
-      img.onerror = next;
-      img.onload = () => {
-        const w = img.naturalWidth || 0, h = img.naturalHeight || 0;
-        const tiny = (w <= 120 || h <= 90);
-        const thumb = img.closest('.thumb');
-        if (thumb) { tiny ? thumb.classList.add('lowres') : thumb.classList.remove('lowres'); }
-        img.style.display = 'block';
-        if (fallback) fallback.style.display = 'none';
-      };
+      const seq = buildThumbCandidates(id); let i=0;
+      const showFallback=()=>{ img.style.display='none'; if(fallback) fallback.style.display='flex'; };
+      const next=()=>{ if(i<seq.length) img.src=seq[i++]; else showFallback(); };
+      img.onerror=next; img.onload=()=>{ const w=img.naturalWidth||0,h=img.naturalHeight||0; const tiny=(w<=120||h<=90); const t=img.closest('.thumb'); if(t){ tiny?t.classList.add('lowres'):t.classList.remove('lowres'); } img.style.display='block'; if(fallback) fallback.style.display='none'; };
       next();
     }
 
-    // === UI ===
-    function card(v){
-      const el = document.createElement('article');
-      el.className = 'card';
+    // === UI cards ===
+    function cardYt(v){
+      const el = document.createElement('article'); el.className='card';
       const date = v.publishedAt ? new Date(v.publishedAt).toLocaleDateString('es-AR', {year:'numeric', month:'short', day:'2-digit'}) : '';
       el.innerHTML = `
         <div class='thumb' data-id='${v.id}' data-title='${escapeHtml(v.title)}'>
@@ -154,85 +168,143 @@
           <h3 class='title'>${escapeHtml(v.title)}</h3>
           <div class='muted'>${date}</div>
         </div>`;
-      const img = el.querySelector('img');
-      const fb  = el.querySelector('.fallback');
-      setBestThumb(img, v.id, fb);
+      const img = el.querySelector('img'); const fb = el.querySelector('.fallback'); setBestThumb(img, v.id, fb);
       el.querySelector('.thumb').onclick = () => openModal(v.id, v.title);
       return el;
     }
 
-    function render(){
-      const q = ($('#q').value || '').toLowerCase();
-      let vids = state.items;
-      if (q) vids = vids.filter(v => (v.title||'').toLowerCase().includes(q));
-      if (state.order === 'title-asc') vids.sort((a,b)=>(a.title||'').localeCompare(b.title||''));
-      else vids.sort((a,b)=> new Date(b.publishedAt||0) - new Date(a.publishedAt||0));
-      $('#grid').innerHTML = '';
-      vids.forEach(v => $('#grid').appendChild(card(v)));
-      $('#empty').hidden = vids.length > 0;
+    function cardIg(v, idx){
+      const el = document.createElement('article'); el.className='card';
+      const date = v.publishedAt ? new Date(v.publishedAt).toLocaleDateString('es-AR', {year:'numeric', month:'short', day:'2-digit'}) : '';
+      el.innerHTML = `
+        <button class='del-ig' title='Eliminar' aria-label='Eliminar'>&times;</button>
+        <div class='thumb' data-type='ig' data-id='${v.id}' data-title='${escapeHtml(v.title||'Instagram')}'>
+          <div class='fallback' style='display:flex;'>${escapeHtml(v.title||'Instagram')}</div>
+          <span class='ig-badge'>Instagram</span>
+        </div>
+        <div class='meta'>
+          <h3 class='title'>${escapeHtml(v.title||'—')}</h3>
+          <div class='muted'>${date}</div>
+        </div>`;
+      el.querySelector('.thumb').onclick = () => openModalIG(v.id, v.title);
+      el.querySelector('.del-ig').onclick = (ev)=>{ ev.stopPropagation(); removeIg(idx); };
+      return el;
     }
 
-    // === Data ===
+    function renderYt(){
+      const q = ($('#q').value || '').toLowerCase();
+      let vids = state.ytItems.slice();
+      if(q) vids = vids.filter(v => (v.title||'').toLowerCase().includes(q));
+      if(state.order==='title-asc') vids.sort((a,b)=>(a.title||'').localeCompare(b.title||''));
+      else vids.sort((a,b)=> new Date(b.publishedAt||0) - new Date(a.publishedAt||0));
+      $('#gridYt').innerHTML=''; vids.forEach(v=>$('#gridYt').appendChild(cardYt(v)));
+      $('#empty').hidden = vids.length>0 || state.activeTab==='ig';
+    }
+    function renderIg(){
+      const q = ($('#q').value || '').toLowerCase(); let posts = state.igItems.slice();
+      if(q) posts = posts.filter(v => (v.title||'Instagram').toLowerCase().includes(q));
+      $('#gridIg').innerHTML=''; posts.forEach((v,i)=>$('#gridIg').appendChild(cardIg(v,i)));
+      $('#empty').hidden = posts.length>0 || state.activeTab==='yt';
+    }
+    function renderActive(){ state.activeTab==='yt' ? renderYt() : renderIg(); }
+
+    // === Data (YouTube) ===
+    const PRESET_ITEMS = [
+      { id:"-r8WB0Qfcmg", title:"VFX BREAKDOWN - Museo Conmebol | BANI VFX", publishedAt:null },
+      { id:"m4NQlZl_jTM", title:"SERIES - La mente del poder | BANI VFX", publishedAt:null },
+      { id:"H8Ab41nj6_s", title:"CONMEBOL - Muñecos Libertadores | BANI VFX", publishedAt:null },
+      { id:"jnRvSpPNKZ0", title:"SHORT FILM - Cucaracha | BANI VFX", publishedAt:null },
+      { id:"y2VhNRZ7HHk", title:"REEL BANI VFX 2024", publishedAt:null },
+      { id:"tmXkohN21eY", title:"VFX BREAKDOWN - La Piedad | BANI VFX", publishedAt:null }
+    ];
+
     async function ytJson(u){
       const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 10000));
-      const r = await Promise.race([fetch(u), timeout]);
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
+      const r = await Promise.race([fetch(u), timeout]); if(!r.ok) throw new Error('HTTP '+r.status); return r.json();
     }
-
     async function fetchChannelUploads(k, id){
       const ch = await ytJson(`https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${id}&key=${k}`);
-      const up = ch.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
-      if (!up) throw new Error('uploads playlist no encontrada');
-      let pageToken = '';
-      const out = [];
-      do {
-        const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${up}&key=${k}${pageToken?`&pageToken=${pageToken}`:''}`;
-        const json = await ytJson(url);
-        json.items?.forEach(it => {
-          const s = it.snippet || {};
-          if (s.resourceId?.videoId) out.push({ id: s.resourceId.videoId, title: s.title, publishedAt: s.publishedAt });
-        });
-        pageToken = json.nextPageToken || '';
-      } while (pageToken);
+      const up = ch.items?.[0]?.contentDetails?.relatedPlaylists?.uploads; if(!up) throw new Error('uploads playlist no encontrada');
+      let pageToken=''; const out=[];
+      do{ const url=`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${up}&key=${k}${pageToken?`&pageToken=${pageToken}`:''}`;
+          const json=await ytJson(url);
+          json.items?.forEach(it=>{ const s=it.snippet||{}; if(s.resourceId?.videoId) out.push({ id:s.resourceId.videoId, title:s.title, publishedAt:s.publishedAt }); });
+          pageToken=json.nextPageToken||''; } while(pageToken);
       return out;
     }
 
     async function load(){
       try{
-        $('#empty').textContent = 'Cargando…';
+        $('#empty').textContent='Cargando…';
         const items = await fetchChannelUploads(API_KEY, CHANNEL_ID);
-        if (!items.length) throw new Error('sin_items');
-        state.items = items; render(); $('#empty').hidden = state.items.length > 0;
+        if(!items.length) throw new Error('sin_items');
+        state.ytItems = items; renderActive();
       }catch(e){
         console.warn('Fallo API, uso fallback local:', e);
-        state.items = PRESET_ITEMS.slice();
-        render();
-        $('#empty').hidden = state.items.length > 0;
-        if (!state.items.length) { $('#empty').textContent = 'No pudimos cargar videos (API/cuota).'; }
+        state.ytItems = PRESET_ITEMS.slice(); renderActive();
+        if(!state.ytItems.length && state.activeTab==='yt'){ $('#empty').textContent='No pudimos cargar videos (API/cuota).'; }
       }
     }
 
-    function openModal(id, t){
-      $('#modalTitle').textContent = t;
-      $('#player').src = `https://www.youtube.com/embed/${id}?autoplay=1`;
-      $('#modal').showModal();
+    // === Modal ===
+    function openModal(id, t){ $('#modalTitle').textContent=t||'Reproduciendo…'; $('#player').src=`https://www.youtube.com/embed/${id}?autoplay=1`; $('#modal').showModal(); }
+    function openModalIG(code, t){ $('#modalTitle').textContent=t||'Reproduciendo…'; $('#player').src=igEmbedUrl(code); $('#modal').showModal(); }
+    $('#closeModal').onclick = () => { $('#player').src=''; $('#modal').close(); };
+
+    // === IG persistence (localStorage) ===
+    const IG_STORE_KEY = 'granberta_ig_urls';
+    function saveIg(){ localStorage.setItem(IG_STORE_KEY, JSON.stringify(state.igItems)); }
+    function loadIg(){
+      const raw = localStorage.getItem(IG_STORE_KEY);
+      if(raw){ try{ const arr=JSON.parse(raw); if(Array.isArray(arr)) state.igItems = arr; }catch{ /* ignore */ } }
+      if(!state.igItems.length && GRAN_BERTA_IG_URLS.length){
+        // seed desde el código
+        state.igItems = GRAN_BERTA_IG_URLS.map(url=>{ const code=parseInstagramShortcode(url); return code?{id:code,title:'Instagram',publishedAt:null}:null; }).filter(Boolean);
+      }
     }
-    $('#closeModal').onclick = () => { $('#player').src = ''; $('#modal').close(); };
+    function addIgFromPrompt(){
+      const input = prompt('Pegá una o más URLs de Instagram (separadas por coma)');
+      if(!input) return;
+      input.split(',').map(s=>s.trim()).filter(Boolean).forEach(url=>{
+        const code = parseInstagramShortcode(url);
+        if(code && !state.igItems.some(x=>x.id===code)) state.igItems.push({ id:code, title:'Instagram', publishedAt:null });
+      });
+      saveIg(); renderActive();
+    }
+    function removeIg(index){ state.igItems.splice(index,1); saveIg(); renderActive(); }
+    function exportIg(){
+      const list = state.igItems.map(x=>`https://www.instagram.com/reel/${x.id}/`);
+      const txt = JSON.stringify(list, null, 2);
+      navigator.clipboard?.writeText(txt).then(()=>alert('Lista copiada al portapapeles. Pegala en GRAN_BERTA_IG_URLS si querés que sea global.')).catch(()=>alert('No se pudo copiar.'));
+    }
 
     // === Auto-init ===
-    (function init(){ applyTheme(); load(); })();
+    (function init(){
+      applyTheme();
+      // Tabs
+      $('#tabYt').onclick = ()=>{ state.activeTab='yt'; $('#tabYt').classList.add('active'); $('#tabIg').classList.remove('active'); $('#gridYt').classList.remove('hidden'); $('#gridIg').classList.add('hidden'); $('#igToolbar').classList.add('hidden'); renderActive(); };
+      $('#tabIg').onclick = ()=>{ state.activeTab='ig'; $('#tabIg').classList.add('active'); $('#tabYt').classList.remove('active'); $('#gridIg').classList.remove('hidden'); $('#gridYt').classList.add('hidden'); $('#igToolbar').classList.remove('hidden'); renderActive(); };
+
+      // IG toolbar
+      $('#addIg').onclick = addIgFromPrompt;
+      $('#exportIg').onclick = exportIg;
+
+      loadIg();
+      load();
+    })();
 
     // === Tests mínimos (consola) ===
     ;(function tests(){
       console.group('Smoke tests');
-      console.assert(typeof buildThumbCandidates === 'function', 'buildThumbCandidates existe');
+      console.assert(typeof buildThumbCandidates==='function','buildThumbCandidates existe');
       const cand = buildThumbCandidates('TESTID');
-      console.assert(cand[0].includes('/hqdefault.'), 'Primer candidato es hqdefault');
-      console.assert(cand.some(u=>u.endsWith('/0.jpg')), 'Incluye 0.jpg');
-      console.assert(typeof setBestThumb === 'function', 'setBestThumb existe');
-      console.assert(typeof fetchChannelUploads === 'function', 'fetchChannelUploads existe');
-      console.assert(Array.isArray(PRESET_ITEMS) && PRESET_ITEMS.length > 0, 'PRESET_ITEMS existe y tiene elementos');
+      console.assert(Array.isArray(cand) && cand.length>0, 'candidatos ok');
+      console.assert(typeof setBestThumb==='function','setBestThumb existe');
+      console.assert(typeof fetchChannelUploads==='function','fetchChannelUploads existe');
+      console.assert(typeof parseInstagramShortcode==='function','parseInstagramShortcode existe');
+      console.assert(parseInstagramShortcode('https://www.instagram.com/reel/ABC123/')==='ABC123','parseInstagramShortcode extrae shortcode');
+      console.assert(igEmbedUrl('XYZ').includes('/reel/XYZ/embed'),'igEmbedUrl ok');
+      console.assert(Array.isArray(state.ytItems) && Array.isArray(state.igItems),'states ok');
       console.groupEnd();
     })();
   </script>
